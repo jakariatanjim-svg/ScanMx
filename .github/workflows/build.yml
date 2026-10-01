@@ -1,0 +1,56 @@
+name: Build & Release
+
+on:
+  push:
+    branches: [main, master]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build & Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        id: ver
+        run: |
+          VER="build-${{ github.run_number }}"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare release file
+        run: |
+          mkdir -p dist
+          cp single-file/index.html dist/ScanMx.html
+
+      - name: Push to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.version }}
+          name: "ScanMx ${{ steps.ver.outputs.version }}"
+          body: |
+            ## ScanMx ${{ steps.ver.outputs.version }}
+
+            A fully browser-based document scanner. No installation needed!
+
+            ### How to use
+            1. Download **ScanMx.html** below
+            2. Open it directly in any browser
+            3. Start scanning!
+
+            ### Features
+            - 📷 Camera capture + file upload
+            - 🖼️ Image editing (rotate, flip, brightness, contrast, saturation)
+            - ✨ Auto-enhance
+            - 📐 Perspective correction
+            - 🔤 OCR (বাংলা + English)
+            - 🌙 Dark mode (auto-detects system theme)
+            - 📋 Copy & download text/image
+
+            > Runs 100% in browser — no API key, no server, no install.
+          files: |
+            dist/ScanMx.html
