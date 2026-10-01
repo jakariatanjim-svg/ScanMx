@@ -179,15 +179,87 @@ Potential features for future versions:
 
 MIT License - Free for personal and commercial use.
 
-## Credits
+# GitHub Setup for ScanMx
 
-- **Tesseract.js** - https://github.com/naptha/tesseract.js
-- **Tailwind CSS** - https://tailwindcss.com
-- **Cropper.js** - https://fengyuanchen.github.io/cropperjs
+Follow these steps to push your ScanMx project to GitHub:
+
+## Step 1: Create Repository on GitHub
+
+1. Go to https://github.com/new
+2. Enter repository name: **ScanMx**
+3. Choose **Public** or **Private** (your preference)
+4. Check **"Add a README file"**
+5. Click **"Create repository"**
+
+## Step 2: Connect Local Repository to GitHub
+
+After creating the repository, copy the repository URL (e.g., `https://github.com/YOUR_USERNAME/ScanMx.git`)
+
+Then run these commands in your terminal:
+
+```bash
+# Navigate to your project directory
+cd e:\ScanMx
+
+# Add remote origin (replace with your actual repository URL)
+git remote add origin https://github.com/YOUR_USERNAME/ScanMx.git
+
+# Push to GitHub
+git push -u origin main
+```
+
+## Step 3: Verify Push
+
+After pushing, visit your repository on GitHub to confirm the files are uploaded:
+`https://github.com/YOUR_USERNAME/ScanMx`
 
 ---
 
-**Built with ❤️ for personal document scanning needs**
+## Alternative: Use GitHub Desktop
+
+If you prefer a GUI:
+
+1. Download and install [GitHub Desktop](https://desktop.github.com)
+2. Clone your repository to a folder
+3. Copy all ScanMx files to that folder
+4. Commit and push through the GitHub Desktop interface
+
+---
+
+## Your Project Structure on GitHub
+
+```
+ScanMx/
+├── index.html          — Main application
+├── css/
+│   └── styles.css      — Styles with dark mode support
+├── js/
+│   ├── app.js          — Main application controller
+│   ├── camera.js       — Camera capture module
+│   ├── imageProcessor.js — Image enhancement module
+│   ├── perspective.js  — Perspective correction module
+│   └── ocr.js          — OCR integration module
+└── README.md           — Project documentation
+```
+
+## Features Included
+
+- ✅ File upload with drag-and-drop
+- ✅ Camera capture
+- ✅ Image editing (rotation, brightness, contrast, saturation)
+- ✅ Auto-enhance
+- ✅ Perspective correction
+- ✅ OCR (Bangla + English)
+- ✅ Dark mode support
+- ✅ Text copy/download
+
+---
+
+**Note:** For camera functionality, serve via local server:
+```bash
+python -m http.server 8000
+```
+Then open: http://localhost:8000
 
 ## GitHub Setup Instructions
 
