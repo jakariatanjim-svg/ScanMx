@@ -4,60 +4,54 @@ on:
   push:
     branches: [main, master]
   workflow_dispatch:
-    inputs:
-      release_type:
-        description: 'Release Type'
-        required: true
-        default: 'automatic'
-        type: choice
-        options:
-          - automatic
-          - manual
 
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Create single HTML file
+      - name: Create release folder
         run: |
           mkdir -p single-file
           cp single-file/index.html single-file/ScanMx.html
           
-      - name: Get version tag
-        id: version
+      - name: Get release tag
+        id: tag
         run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            VERSION="manual-${{ github.run_number }}"
-          else
-            VERSION="${{ github.run_number }}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          TAG="v${{ github.run_number }}"
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
           
-      - name: Create Release
-        id: release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.version.outputs.version }}
-          name: ScanMx v${{ steps.version.outputs.version }}
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-          files: |
-            single-file/ScanMx.html
+      - name: Create Release using GitHub CLI
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create release
+          gh release create ${{ steps.tag.outputs.tag }} \
+            --title "ScanMx ${{ steps.tag.outputs.tag }}" \
+            --notes-file - << 'EOF'
+# ScanMx - Personal Document Scanner
+
+A fully browser-based document scanner with OCR capabilities.
+
+## How to Use
+1. Download the HTML file below
+2. Open in any browser
+3. Start scanning!
+
+## Features
+- 📷 Camera capture
+- 🖼️ Image editing
+- 🔤 OCR (Bangla + English)
+- 🌙 Dark mode
+EOF
           
       - name: Upload Release Asset
-        if: steps.release.outputs.url != ''
-        uses: actions/upload-release-asset@v1
-        with:
-          upload_url: ${{ steps.release.outputs.upload_url }}
-          asset_path: single-file/ScanMx.html
-          asset_name: ScanMx.html
-          asset_content_type: text/html
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release upload ${{ steps.tag.outputs.tag }} single-file/ScanMx.html --clobber
