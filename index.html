@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScanMx - Personal Document Scanner</title>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Cropper.js CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/2.2.0/cropper.min.css">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Additional Tailwind-based styles */
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+        
+        .slider-track {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            outline: none;
+        }
+        
+        .slider-track::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .slider-track::-webkit-slider-thumb:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b border-gray-200">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 gradient-bg rounded-lg flex items-center justify-center">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">ScanMx</h1>
+                        <p class="text-sm text-gray-500">Personal Document Scanner</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                    <button id="reset-btn" class="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium rounded-lg hover:bg-gray-100 transition">
+                        Reset
+                    </button>
+                    <a href="https://github.com" target="_blank" class="px-4 py-2 gradient-bg text-white font-medium rounded-lg btn-gradient">
+                        GitHub
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Left Panel - Input -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover transition-all duration-300">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Input Source</h2>
+                    </div>
+                    
+                    <div class="p-4 space-y-4">
+                        <!-- File Upload -->
+                        <div id="file-drop-zone" class="file-input">
+                            <input type="file" id="file-input" accept="image/*" class="hidden">
+                            <label for="file-input" class="cursor-pointer">
+                                <div class="flex flex-col items-center gap-3">
+                                    <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="font-medium text-gray-700">Drop image here</p>
+                                        <p class="text-sm text-gray-500">or click to browse</p>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                        
+                        <!-- Camera Section -->
+                        <div class="camera-section" id="camera-section">
+                            <button id="start-camera" class="w-full py-3 px-4 gradient-bg text-white font-medium rounded-lg btn-gradient flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Start Camera
+                            </button>
+                            
+                            <div id="camera-preview" class="hidden mt-4 rounded-lg overflow-hidden bg-gray-900 aspect-video">
+                                <video id="camera-video" class="w-full h-full object-cover" autoplay playsinline></video>
+                            </div>
+                            
+                            <div id="camera-controls" class="hidden mt-4 flex gap-2">
+                                <button id="capture-photo" class="flex-1 py-2 px-3 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition">
+                                    📷 Capture
+                                </button>
+                                <button id="switch-camera" class="py-2 px-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition">
+                                    🔄 Switch
+                                </button>
+                                <button id="stop-camera" class="py-2 px-3 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition">
+                                    ✖ Stop
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Image Controls -->
+                <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover transition-all duration-300">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Image Controls</h2>
+                    </div>
+                    
+                    <div class="p-4 space-y-4">
+                        <!-- Rotation -->
+                        <div class="flex gap-2">
+                            <button id="rotate-left" class="flex-1 py-2 px-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">
+                                ↺ Rotate Left
+                            </button>
+                            <button id="rotate-right" class="flex-1 py-2 px-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">
+                                ↻ Rotate Right
+                            </button>
+                        </div>
+                        
+                        <div class="flex gap-2">
+                            <button id="flip-h" class="flex-1 py-2 px-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">
+                                ↔ Flip H
+                            </button>
+                            <button id="flip-v" class="flex-1 py-2 px-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition">
+                                ↕ Flip V
+                            </button>
+                        </div>
+                        
+                        <!-- Brightness -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Brightness: <span id="brightness-value">100</span>%
+                            </label>
+                            <input type="range" id="brightness" min="0" max="200" value="100" class="w-full slider-track">
+                        </div>
+                        
+                        <!-- Contrast -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Contrast: <span id="contrast-value">100</span>%
+                            </label>
+                            <input type="range" id="contrast" min="0" max="200" value="100" class="w-full slider-track">
+                        </div>
+                        
+                        <!-- Saturation -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">
+                                Saturation: <span id="saturation-value">100</span>%
+                            </label>
+                            <input type="range" id="saturation" min="0" max="200" value="100" class="w-full slider-track">
+                        </div>
+                        
+                        <!-- Auto Enhance -->
+                        <button id="auto-enhance" class="w-full py-3 px-4 gradient-bg text-white font-medium rounded-lg btn-gradient">
+                            ✨ Auto Enhance
+                        </button>
+                        
+                        <!-- Perspective Correction -->
+                        <button id="detect-edges" class="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+                            📐 Perspective Correction
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Filters -->
+                <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden card-hover transition-all duration-300">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Filters</h2>
+                    </div>
+                    
+                    <div class="p-4 grid grid-cols-2 gap-2">
+                        <button id="filter-none" class="py-2 px-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition border-2 border-transparent hover:border-purple-400">
+                            🎨 Original
+                        </button>
+                        <button id="filter-grayscale" class="py-2 px-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition border-2 border-transparent hover:border-purple-400">
+                            ⚫ Grayscale
+                        </button>
+                        <button id="filter-bw" class="py-2 px-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition border-2 border-transparent hover:border-purple-400">
+                            ⬛ B&W
+                        </button>
+                        <button id="filter-magic" class="py-2 px-3 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition border-2 border-transparent hover:border-purple-400">
+                            🌈 Magic Color
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Middle Panel - Image Preview -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden h-full">
+                    <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-800">Preview</h2>
+                        <button id="download-image" class="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition text-sm">
+                            ⬇ Download Image
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 h-[calc(100%-80px)] flex items-center justify-center bg-gray-50">
+                        <div id="image-container" class="w-full h-full flex items-center justify-center">
+                            <div id="placeholder" class="text-center text-gray-400">
+                                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                </svg>
+                                <p class="font-medium">No image loaded</p>
+                                <p class="text-sm">Upload or capture an image to get started</p>
+                            </div>
+                            <img id="editor-image" class="hidden max-w-full max-h-full object-contain" alt="Preview">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Panel - Output -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-4 border-b border-gray-200">
+                        <h2 class="text-lg font-semibold text-gray-800">Text Output</h2>
+                    </div>
+                    
+                    <div class="p-4 space-y-4">
+                        <!-- Language Selection -->
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">OCR Language</label>
+                            <select id="ocr-language" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="ben+eng">বাংলা + English</option>
+                                <option value="eng">English</option>
+                                <option value="ben">বাংলা (Bangla)</option>
+                                <option value="hin">हिन्दी (Hindi)</option>
+                                <option value="ara">العربية (Arabic)</option>
+                            </select>
+                        </div>
+                        
+                        <!-- Extract Button -->
+                        <button id="extract-text" class="w-full py-3 px-4 gradient-bg text-white font-medium rounded-lg btn-gradient flex items-center justify-center gap-2">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            Extract Text (OCR)
+                        </button>
+                        
+                        <!-- Progress Bar -->
+                        <div id="progress-container" class="hidden">
+                            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="progress-bar" class="h-full gradient-bg transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                            <p id="progress-text" class="text-sm text-gray-600 mt-2">Initializing OCR...</p>
+                        </div>
+                        
+                        <!-- Confidence -->
+                        <div id="confidence-container" class="hidden">
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-sm font-medium text-gray-700">Confidence</span>
+                                <span id="confidence-value" class="text-sm font-bold text-purple-600">0%</span>
+                            </div>
+                            <div class="h-2 bg-gray-200 rounded-full overflow-hidden">
+                                <div id="confidence-fill" class="h-full bg-green-500 transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Text Output -->
+                        <div>
+                            <textarea id="text-output" class="w-full h-64 p-3 border border-gray-300 rounded-lg font-mono text-sm resize-none focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Extracted text will appear here..." readonly></textarea>
+                        </div>
+                        
+                        <!-- Copy & Download -->
+                        <div class="flex gap-2">
+                            <button id="copy-text" class="flex-1 py-2 px-3 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition">
+                                📋 Copy
+                            </button>
+                            <button id="download-text" class="flex-1 py-2 px-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition">
+                                ⬇ Download .txt
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- History -->
+                <div class="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="p-4 border-b border-gray-200 flex justify-between items-center">
+                        <h2 class="text-lg font-semibold text-gray-800">History</h2>
+                        <button id="clear-history" class="text-sm text-red-600 hover:text-red-700 font-medium">
+                            Clear All
+                        </button>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div id="history-list" class="space-y-2 max-h-48 overflow-y-auto">
+                            <p class="text-gray-500 text-sm">No scan history yet</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Perspective Correction Modal -->
+    <div id="perspective-modal" class="modal">
+        <div class="modal-content max-w-4xl">
+            <div class="modal-header">
+                <h3 class="text-xl font-bold text-gray-800">Perspective Correction</h3>
+                <button class="close-modal text-gray-500 hover:text-gray-700" onclick="app.cancelPerspectiveCorrection()">✖</button>
+            </div>
+            
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 mb-2">
+                    Drag the corner points to adjust the document boundaries. The red dots mark the detected corners.
+                </p>
+                <canvas id="perspective-canvas" class="w-full border border-gray-300 rounded-lg cursor-move"></canvas>
+            </div>
+            
+            <div class="flex gap-3">
+                <button onclick="app.applyPerspectiveCorrection()" class="flex-1 py-2 px-4 gradient-bg text-white font-medium rounded-lg btn-gradient">
+                    ✓ Apply Correction
+                </button>
+                <button onclick="app.cancelPerspectiveCorrection()" class="py-2 px-4 bg-gray-200 text-gray-700 font-medium rounded-lg hover:bg-gray-300 transition">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-4 right-4 px-6 py-3 bg-gray-800 text-white rounded-lg shadow-lg transform translate-y-full opacity-0 transition-all duration-300">
+        <span id="toast-message">Notification</span>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-white border-t border-gray-200 mt-8 py-6">
+        <div class="container mx-auto px-4 text-center text-gray-600">
+            <p>ScanMx - Personal Document Scanner | No API keys required | Runs 100% in browser</p>
+            <p class="text-sm mt-2">Built with ❤️ using Tesseract.js, Canvas API, and MediaDevices API</p>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/2.2.0/cropper.min.js"></script>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    
+    <!-- App Scripts -->
+    <script src="js/imageProcessor.js"></script>
+    <script src="js/camera.js"></script>
+    <script src="js/perspective.js"></script>
+    <script src="js/ocr.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script>
+        // Additional UI interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Reset button
+            document.getElementById('reset-btn')?.addEventListener('click', function() {
+                if (confirm('Reset all changes? This will clear the current image and extracted text.')) {
+                    location.reload();
+                }
+            });
+            
+            // Update slider values display
+            ['brightness', 'contrast', 'saturation'].forEach(id => {
+                const slider = document.getElementById(id);
+                const valueDisplay = document.getElementById(id + '-value');
+                if (slider && valueDisplay) {
+                    slider.addEventListener('input', function() {
+                        valueDisplay.textContent = this.value;
+                    });
+                }
+            });
+            
+            // Toggle confidence container
+            document.getElementById('extract-text')?.addEventListener('click', function() {
+                document.getElementById('confidence-container').classList.remove('hidden');
+            });
+        });
+        
+        // Toast notification
+        function showToast(message, duration = 3000) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            toast.classList.remove('translate-y-full', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-full', 'opacity-0');
+            }, duration);
+        }
+    </script>
+</body>
+</html>
