@@ -1,0 +1,99 @@
+name: Build and Release Single File
+
+on:
+  push:
+    branches: [main, master, single-file-build]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          
+      - name: Install dependencies
+        run: npm install
+        
+      - name: Create single HTML file
+        run: |
+          # Create single-file directory if it doesn't exist
+          mkdir -p single-file
+          
+          # Combine all JS files into one
+          cat js/imageProcessor.js > single-file/temp.js
+          echo "" >> single-file/temp.js
+          cat js/camera.js >> single-file/temp.js
+          echo "" >> single-file/temp.js
+          cat js/perspective.js >> single-file/temp.js
+          echo "" >> single-file/temp.js
+          cat js/ocr.js >> single-file/temp.js
+          echo "" >> single-file/temp.js
+          cat js/app.js >> single-file/temp.js
+          
+          # The index.html already contains all embedded CSS and JS
+          # Just copy it to the release folder
+          cp index.html single-file/ScanMx.html
+          
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ github.run_number }}
+          release_name: ScanMx v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          body: |
+            # ScanMx - Personal Document Scanner
+            
+            A fully browser-based document scanner with OCR capabilities.
+            
+            ## How to Use
+            
+            1. Download the HTML file below
+            2. Open it in any modern browser (Chrome, Firefox, Edge, Safari)
+            3. Start scanning!
+            
+            ## Features
+            
+            - 📷 Camera capture and file upload
+            - 🖼️ Image editing (rotate, flip, brightness, contrast)
+            - ✨ Auto-enhance
+            - 📐 Perspective correction
+            - 🔤 OCR (Bangla + English)
+            - 🌙 Dark mode support
+            
+            ## No Installation Required
+            
+            This is a single-file app - just open in browser and use!
+            
+            Built with ❤️
+        asset_name: ScanMx.html
+        asset_path: single-file/ScanMx.html
+        asset_content_type: text/html
+
+  upload:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ScanMx.html
+          
+      - name: Upload to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.build.outputs.upload_url }}
+          asset_path: ./ScanMx.html
+          asset_name: ScanMx.html
+          asset_content_type: text/html

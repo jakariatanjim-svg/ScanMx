@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ScanMx - Personal Document Scanner</title>
+    <style>
+        /* ScanMx - All-in-one styles */
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-color: #64748b;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-color: #1e293b;
+            --border-color: #e2e8f0;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #0f172a;
+                --card-bg: #1e293b;
+                --text-color: #f1f5f9;
+                --border-color: #334155;
+            }
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            min-height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+
+        header {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 { font-size: 1.8rem; font-weight: 700; color: var(--primary-color); }
+
+        .dark-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .dark-btn:hover { transform: translateY(-2px); }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr 350px;
+            gap: 20px;
+            height: calc(100vh - 200px);
+        }
+
+        .panel {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .panel h2 { font-size: 1.1rem; color: var(--text-color); }
+
+        .file-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-input:hover { border-color: var(--primary-color); background-color: rgba(37,99,235,0.05); }
+
+        .camera-section button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .camera-preview { display: none; width: 100%; aspect-ratio: 4/3; background-color: #1e293b; border-radius: 8px; overflow: hidden; }
+        .camera-preview video { width: 100%; height: 100%; object-fit: cover; }
+
+        .control-group { background-color: #f8fafc; padding: 15px; border-radius: 8px; }
+        .control-group button {
+            width: 100%; padding: 8px; margin: 4px 0; background-color: var(--secondary-color); color: white;
+            border: none; border-radius: 4px; cursor: pointer;
+        }
+
+        .range-slider {
+            width: 100%; -webkit-appearance: none; height: 6px; border-radius: 3px; background: #e2e8f0; outline: none;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); cursor: pointer;
+        }
+
+        #editor-image { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: 500;
+        }
+        .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102,126,234,0.4); }
+
+        #text-output {
+            width: 100%; height: 200px; padding: 15px; border: 1px solid var(--border-color);
+            border-radius: 8px; font-family: monospace; font-size: 0.9rem; resize: none;
+        }
+
+        .slider-track {
+            -webkit-appearance: none; width: 100%; height: 6px; border-radius: 3px; background: #e2e8f0; outline: none;
+        }
+        .slider-track::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); cursor: pointer; }
+        .slider-track::-webkit-slider-thumb:hover { transform: scale(1.1); }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background-color: white; border-radius: 12px; padding: 25px; max-width: 600px; width: 90%;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .progress-bar-container { display: none; height: 6px; background-color: #e2e8f0; border-radius: 4px; overflow: hidden; }
+        .progress-bar { height: 100%; background-color: var(--primary-color); width: 0%; transition: width 0.3s; }
+
+        .confidence-container { display: none; }
+        .confidence-fill { height: 8px; background-color: var(--success-color); border-radius: 4px; transition: width 0.3s; }
+
+        .history-item {
+            padding: 10px; background-color: white; border: 1px solid var(--border-color);
+            border-radius: 6px; margin-bottom: 8px; cursor: pointer; font-size: 0.9rem;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content { grid-template-columns: 1fr; grid-template-rows: auto 1fr 1fr; height: auto; }
+            .panel { min-height: 500px; }
+        }
+
+        @media (max-width: 768px) {
+            header { flex-direction: column; gap: 15px; text-align: center; }
+            .container { padding: 10px; }
+            .main-content { gap: 10px; }
+            .panel { min-height: auto; }
+        }
+
+        /* Dark mode styles */
+        @media (prefers-color-scheme: dark) {
+            .control-group { background-color: #334155; }
+            .range-slider, .slider-track { background: #475569; }
+            .progress-bar-container { background-color: #334155; }
+            .modal-content { background-color: #1e293b; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div style="width:40px;height:40px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                <svg style="width:24px;height:24px;color:white;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <div>
+                <h1>ScanMx</h1>
+                <p style="font-size:14px;color:var(--text-color);">Personal Document Scanner</p>
+            </div>
+        </div>
+        <button class="dark-btn" onclick="toggleDarkMode()">🌙 Dark Mode</button>
+    </header>
+
+    <main class="container">
+        <div class="main-content">
+            <!-- Left Panel - Input -->
+            <div class="panel">
+                <h2>📷 Input Source</h2>
+                <div class="file-input" id="file-drop-zone">
+                    <input type="file" id="file-input" accept="image/*" style="display:none;">
+                    <label for="file-input" style="cursor:pointer;display:block;">
+                        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+                            <div style="width:48px;height:48px;background:purple-100;border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                <svg style="width:24px;height:24px;color:var(--primary-color);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <div style="text-align:center;">
+                                <p style="font-weight:500;">Drop image here</p>
+                                <p style="font-size:14px;">or click to browse</p>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <div class="camera-section" id="camera-section">
+                    <button onclick="startCamera()">📷 Start Camera</button>
+                    <div id="camera-preview" class="camera-preview">
+                        <video id="camera-video" autoplay playsinline></video>
+                    </div>
+                    <div id="camera-controls" style="display:none;gap:10px;">
+                        <button onclick="capturePhoto()" style="background:#10b981;">📷 Capture</button>
+                        <button onclick="switchCamera()" style="background:#64748b;">🔄 Switch</button>
+                        <button onclick="stopCamera()" style="background:#ef4444;">✖ Stop</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Middle Panel - Image Preview -->
+            <div class="panel">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <h2>🖼️ Preview</h2>
+                    <button onclick="downloadImage()" class="dark-btn" style="font-size:14px;">⬇ Download</button>
+                </div>
+                <div style="flex:1;background:#f8fafc;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;">
+                    <div id="image-container" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+                        <div id="placeholder" style="text-align:center;color:var(--text-color);">
+                            <svg style="width:64px;height:64px;margin:0 auto 20px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            <p>No image loaded</p>
+                            <p style="font-size:14px;">Upload or capture an image</p>
+                        </div>
+                        <img id="editor-image" class="hidden" style="max-width:100%;max-height:100%;object-fit:contain;" alt="Preview">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Output -->
+            <div class="panel">
+                <h2>🔤 Text Output</h2>
+                <div style="margin-bottom:10px;">
+                    <label style="display:block;margin-bottom:5px;">OCR Language</label>
+                    <select id="ocr-language" style="width:100%;padding:8px;border:1px solid var(--border-color);border-radius:6px;">
+                        <option value="ben+eng">বাংলা + English</option>
+                        <option value="eng">English</option>
+                        <option value="ben">বাংলা (Bangla)</option>
+                    </select>
+                </div>
+                <button class="btn-gradient" onclick="extractText()" style="width:100%;margin-bottom:10px;">
+                    🧐 Extract Text (OCR)
+                </button>
+                
+                <div id="progress-container" class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar"></div>
+                </div>
+                
+                <div id="confidence-container" class="confidence-container">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                        <span style="font-size:14px;">Confidence</span>
+                        <span id="confidence-value" style="font-weight:bold;color:var(--primary-color);">0%</span>
+                    </div>
+                    <div class="confidence-fill" style="width:0%;"></div>
+                </div>
+
+                <textarea id="text-output" placeholder="Extracted text will appear here..." readonly></textarea>
+                
+                <div style="display:flex;gap:10px;">
+                    <button class="btn-gradient" onclick="copyText()" style="flex:1;">📋 Copy</button>
+                    <button class="btn-gradient" onclick="downloadText()" style="flex:1;">⬇ Download</button>
+                </div>
+
+                <div style="margin-top:auto;">
+                    <h3>History</h3>
+                    <div id="history-list" style="max-height:150px;overflow-y:auto;margin-top:10px;">
+                        <p style="color:var(--text-color);font-size:14px;">No history yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Perspective Modal -->
+    <div id="perspective-modal" class="modal">
+        <div class="modal-content">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+                <h3 style="font-size:1.2rem;">Perspective Correction</h3>
+                <button onclick="cancelPerspectiveCorrection()" style="background:none;border:none;font-size:1.5rem;cursor:pointer;">✖</button>
+            </div>
+            <p style="font-size:14px;margin-bottom:15px;">Drag corner points to adjust document boundaries.</p>
+            <canvas id="perspective-canvas" style="width:100%;border:1px solid var(--border-color);border-radius:8px;"></canvas>
+            <div style="display:flex;gap:10px;">
+                <button onclick="applyPerspectiveCorrection()" class="btn-gradient" style="flex:1;">✓ Apply</button>
+                <button onclick="cancelPerspectiveCorrection()" style="background:var(--secondary-color);color:white;padding:10px;border:none;border-radius:6px;cursor:pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/2.2.0/cropper.min.js"></script>
+
+    <script>
+        // ============ Image Processor ============
+        class ImageProcessor {
+            constructor() {
+                this.originalImage = null;
+                this.currentCanvas = null;
+                this.settings = { brightness: 100, contrast: 100, saturation: 100, filter: 'none' };
+            }
+
+            loadImage(source) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => {
+                        this.originalImage = img;
+                        this.currentCanvas = this.createCanvas(img.width, img.height);
+                        const ctx = this.currentCanvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0);
+                        resolve(this.currentCanvas);
+                    };
+                    img.onerror = () => reject(new Error('Failed to load image'));
+                    if (source instanceof Blob) img.src = URL.createObjectURL(source);
+                    else if (typeof source === 'string') img.src = source;
+                    else if (source instanceof HTMLCanvasElement) img.src = source.toDataURL();
+                });
+            }
+
+            createCanvas(width, height) {
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                return canvas;
+            }
+
+            applySettings(settings) {
+                if (!this.originalImage) return null;
+                this.settings = { ...this.settings, ...settings };
+                const canvas = this.createCanvas(this.originalImage.width, this.originalImage.height);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(this.originalImage, 0, 0);
+                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let data = imageData.data;
+                const brightness = this.settings.brightness / 100;
+                const contrast = this.settings.contrast / 100;
+                const factor = (259 * (contrast * 255 + 255)) / (255 * (259 - contrast * 255));
+                const saturation = this.settings.saturation / 100;
+
+                for (let i = 0; i < data.length; i += 4) {
+                    let r = data[i] * brightness;
+                    let g = data[i + 1] * brightness;
+                    let b = data[i + 2] * brightness;
+                    r = factor * (r - 128) + 128;
+                    g = factor * (g - 128) + 128;
+                    b = factor * (b - 128) + 128;
+                    const gray = 0.2989 * r + 0.587 * g + 0.114 * b;
+                    r = gray + saturation * (r - gray);
+                    g = gray + saturation * (g - gray);
+                    b = gray + saturation * (b - gray);
+                    if (this.settings.filter === 'grayscale') { const avg = (r + g + b) / 3; r = g = b = avg; }
+                    else if (this.settings.filter === 'bw') { const avg = (r + g + b) / 3; r = g = b = avg > 128 ? 255 : 0; }
+                    else if (this.settings.filter === 'magic') { r = Math.min(255, r * 1.2); g = Math.min(255, g * 1.1); b = Math.min(255, b * 1.3); }
+                    data[i] = Math.max(0, Math.min(255, r));
+                    data[i + 1] = Math.max(0, Math.min(255, g));
+                    data[i + 2] = Math.max(0, Math.min(255, b));
+                }
+                ctx.putImageData(imageData, 0, 0);
+                this.currentCanvas = canvas;
+                return canvas;
+            }
+
+            autoEnhance() {
+                if (!this.originalImage) return null;
+                this.settings = { brightness: 110, contrast: 130, saturation: 80, filter: 'none' };
+                return this.applySettings(this.settings);
+            }
+
+            rotate(degrees) {
+                if (!this.currentCanvas) return null;
+                const canvas = this.createCanvas(degrees % 180 === 0 ? this.currentCanvas.width : this.currentCanvas.height, degrees % 180 === 0 ? this.currentCanvas.height : this.currentCanvas.width);
+                const ctx = canvas.getContext('2d');
+                ctx.translate(canvas.width / 2, canvas.height / 2);
+                ctx.rotate(degrees * Math.PI / 180);
+                ctx.drawImage(this.currentCanvas, -this.currentCanvas.width / 2, -this.currentCanvas.height / 2);
+                this.currentCanvas = canvas;
+                return canvas;
+            }
+
+            flipHorizontal() {
+                if (!this.currentCanvas) return null;
+                const canvas = this.createCanvas(this.currentCanvas.width, this.currentCanvas.height);
+                const ctx = canvas.getContext('2d');
+                ctx.translate(canvas.width, 0);
+                ctx.scale(-1, 1);
+                ctx.drawImage(this.currentCanvas, 0, 0);
+                this.currentCanvas = canvas;
+                return canvas;
+            }
+
+            flipVertical() {
+                if (!this.currentCanvas) return null;
+                const canvas = this.createCanvas(this.currentCanvas.width, this.currentCanvas.height);
+                const ctx = canvas.getContext('2d');
+                ctx.translate(0, canvas.height);
+                ctx.scale(1, -1);
+                ctx.drawImage(this.currentCanvas, 0, 0);
+                this.currentCanvas = canvas;
+                return canvas;
+            }
+
+            crop(x, y, width, height) {
+                if (!this.currentCanvas) return null;
+                const canvas = this.createCanvas(width, height);
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(this.currentCanvas, x, y, width, height, 0, 0, width, height);
+                this.currentCanvas = canvas;
+                return canvas;
+            }
+        }
+
+        // ============ Camera Manager ============
+        class CameraManager {
+            constructor() { this.stream = null; this.facingMode = 'environment'; }
+            async init(videoElementId) { this.videoElement = document.getElementById(videoElementId); }
+            async startCamera() {
+                try {
+                    if (this.stream) this.stopCamera();
+                    this.stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: this.facingMode, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+                    this.videoElement.srcObject = this.stream;
+                    await this.videoElement.play();
+                } catch (error) { throw new Error('Camera access denied: ' + error.message); }
+            }
+            stopCamera() {
+                if (this.stream) this.stream.getTracks().forEach(track => track.stop());
+                if (this.videoElement) this.videoElement.srcObject = null;
+                this.stream = null;
+            }
+            switchCamera() { this.facingMode = this.facingMode === 'environment' ? 'user' : 'environment'; this.startCamera(); }
+            captureFrame() {
+                const canvas = document.createElement('canvas');
+                canvas.width = this.videoElement.videoWidth;
+                canvas.height = this.videoElement.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(this.videoElement, 0, 0);
+                return canvas;
+            }
+        }
+
+        // ============ Perspective Corrector ============
+        class PerspectiveCorrector {
+            detectEdges(imageData) {
+                const { width, height, data } = imageData;
+                const gray = new Uint8Array(width * height);
+                for (let i = 0; i < data.length; i += 4) gray[i / 4] = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+                const edges = new Uint8Array(width * height);
+                const sobelX = [-1, 0, 1, -2, 0, 2, -1, 0, 1];
+                const sobelY = [-1, -2, -1, 0, 0, 0, 1, 2, 1];
+                for (let y = 1; y < height - 1; y++) {
+                    for (let x = 1; x < width - 1; x++) {
+                        let gx = 0, gy = 0;
+                        for (let ky = -1; ky <= 1; ky++) {
+                            for (let kx = -1; kx <= 1; kx++) {
+                                const idx = (y + ky) * width + (x + kx);
+                                const kidx = (ky + 1) * 3 + (kx + 1);
+                                gx += gray[idx] * sobelX[kidx];
+                                gy += gray[idx] * sobelY[kidx];
+                            }
+                        }
+                        edges[y * width + x] = Math.min(255, Math.sqrt(gx * gx + gy * gy));
+                    }
+                }
+                return edges;
+            }
+
+            findDocumentCorners(canvas) {
+                const ctx = canvas.getContext('2d');
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const width = canvas.width, height = canvas.height;
+                const margin = 50;
+                return [
+                    { x: margin, y: margin },
+                    { x: width - margin, y: margin },
+                    { x: width - margin, y: height - margin },
+                    { x: margin, y: height - margin }
+                ];
+            }
+
+            applyPerspectiveCorrection(canvas, corners = null) {
+                if (!corners) corners = this.findDocumentCorners(canvas);
+                const srcPoints = corners.map(c => [c.x, c.y]);
+                const width = Math.max(this.distance(corners[0], corners[1]), this.distance(corners[2], corners[3]));
+                const height = Math.max(this.distance(corners[0], corners[3]), this.distance(corners[1], corners[2]));
+                const dstPoints = [[0, 0], [width, 0], [width, height], [0, height]];
+                const H = this.calculateHomography(srcPoints, dstPoints);
+                return this.warpPerspective(canvas, H, Math.round(width), Math.round(height));
+            }
+
+            distance(p1, p2) { return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)); }
+
+            calculateHomography(src, dst) {
+                const A = [];
+                const b = [];
+                for (let i = 0; i < 4; i++) {
+                    const x = src[i][0], y = src[i][1], u = dst[i][0], v = dst[i][1];
+                    A.push([x, y, 1, 0, 0, 0, -u * x, -u * y]);
+                    A.push([0, 0, 0, x, y, 1, -v * x, -v * y]);
+                    b.push(u); b.push(v);
+                }
+                return this.solveLinearSystem(A, b);
+            }
+
+            solveLinearSystem(A, b) {
+                const n = 8;
+                const augmented = A.map((row, i) => [...row, b[i]]);
+                for (let col = 0; col < n; col++) {
+                    let maxRow = col;
+                    for (let row = col + 1; row < n; row++) {
+                        if (Math.abs(augmented[row][col]) > Math.abs(augmented[maxRow][col])) maxRow = row;
+                    }
+                    [augmented[col], augmented[maxRow]] = [augmented[maxRow], augmented[col]];
+                    for (let row = col + 1; row < n; row++) {
+                        const factor = augmented[row][col] / augmented[col][col];
+                        for (let j = col; j <= n; j++) augmented[row][j] -= factor * augmented[col][j];
+                    }
+                }
+                const x = new Array(n).fill(0);
+                for (let i = n - 1; i >= 0; i--) {
+                    x[i] = augmented[i][n];
+                    for (let j = i + 1; j < n; j++) x[i] -= augmented[i][j] * x[j];
+                    x[i] /= augmented[i][i];
+                }
+                return x;
+            }
+
+            warpPerspective(srcCanvas, H, dstWidth, dstHeight) {
+                const dstCanvas = document.createElement('canvas');
+                dstCanvas.width = dstWidth; dstCanvas.height = dstHeight;
+                const srcCtx = srcCanvas.getContext('2d');
+                const dstCtx = dstCanvas.getContext('2d');
+                const srcImageData = srcCtx.getImageData(0, 0, srcCanvas.width, srcCanvas.height);
+                const dstImageData = dstCtx.createImageData(dstWidth, dstHeight);
+                const H_inv = this.invertMatrix3x3(H);
+                for (let y = 0; y < dstHeight; y++) {
+                    for (let x = 0; x < dstWidth; x++) {
+                        const sx = H_inv[0][0] * x + H_inv[0][1] * y + H_inv[0][2];
+                        const sy = H_inv[1][0] * x + H_inv[1][1] * y + H_inv[1][2];
+                        const sz = H_inv[2][0] * x + H_inv[2][1] * y + H_inv[2][2];
+                        const srcX = Math.round(sx / sz), srcY = Math.round(sy / sz);
+                        if (srcX >= 0 && srcX < srcCanvas.width && srcY >= 0 && srcY < srcCanvas.height) {
+                            const srcIdx = (srcY * srcCanvas.width + srcX) * 4;
+                            const dstIdx = (y * dstWidth + x) * 4;
+                            dstImageData.data[dstIdx] = srcImageData.data[srcIdx];
+                            dstImageData.data[dstIdx + 1] = srcImageData.data[srcIdx + 1];
+                            dstImageData.data[dstIdx + 2] = srcImageData.data[srcIdx + 2];
+                            dstImageData.data[dstIdx + 3] = srcImageData.data[srcIdx + 3];
+                        }
+                    }
+                }
+                dstCtx.putImageData(dstImageData, 0, 0);
+                return dstCanvas;
+            }
+
+            invertMatrix3x3(m) {
+                const det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+                const invDet = 1 / det;
+                return [
+                    [(m[1][1] * m[2][2] - m[1][2] * m[2][1]) * invDet, (m[0][2] * m[2][1] - m[0][1] * m[2][2]) * invDet, (m[0][1] * m[1][2] - m[0][2] * m[1][1]) * invDet],
+                    [(m[1][2] * m[2][0] - m[1][0] * m[2][2]) * invDet, (m[0][0] * m[2][2] - m[0][2] * m[2][0]) * invDet, (m[0][2] * m[1][0] - m[0][0] * m[1][2]) * invDet],
+                    [(m[1][0] * m[2][1] - m[1][1] * m[2][0]) * invDet, (m[0][1] * m[2][0] - m[0][0] * m[2][1]) * invDet, (m[0][0] * m[1][1] - m[0][1] * m[1][0]) * invDet]
+                ];
+            }
+        }
+
+        // ============ OCR Manager ============
+        class OCRManager {
+            constructor() { this.worker = null; this.isReady = false; }
+            async initialize(language = 'ben+eng', progressCallback = null) {
+                if (this.worker) await this.terminate();
+                this.progressCallback = progressCallback;
+                this.worker = await Tesseract.createWorker(language, 1, { logger: m => { if (this.progressCallback && m.progress !== undefined) this.progressCallback({ status: m.status, progress: Math.round(m.progress * 100) }); } });
+                this.isReady = true;
+            }
+            async recognize(image) {
+                if (!this.isReady || !this.worker) throw new Error('OCR not initialized');
+                let imageSource = image;
+                if (image instanceof HTMLCanvasElement) imageSource = image;
+                else if (image instanceof HTMLImageElement) imageSource = image;
+                else if (image instanceof Blob) imageSource = URL.createObjectURL(image);
+                const result = await this.worker.recognize(imageSource);
+                return { text: result.data.text, confidence: result.data.confidence };
+            }
+            async terminate() { if (this.worker) await this.worker.terminate(); this.worker = null; this.isReady = false; }
+        }
+
+        // ============ Main App ============
+        let app = new class ScanApp {
+            constructor() {
+                this.imageProcessor = new ImageProcessor();
+                this.cameraManager = new CameraManager();
+                this.perspectiveCorrector = new PerspectiveCorrector();
+                this.ocrManager = new OCRManager();
+                this.currentImage = null;
+                this.currentImageDataURL = null;
+                this.scanHistory = [];
+                this.init();
+            }
+
+            async init() {
+                this.setupEventListeners();
+                this.loadHistory();
+            }
+
+            setupEventListeners() {
+                const fileInput = document.getElementById('file-input');
+                fileInput.addEventListener('change', e => this.handleFileSelect(e));
+                const fileDropZone = document.getElementById('file-drop-zone');
+                fileDropZone.addEventListener('dragover', e => { e.preventDefault(); fileDropZone.style.borderColor = '#2563eb'; });
+                fileDropZone.addEventListener('dragleave', () => { fileDropZone.style.borderColor = 'var(--border-color)'; });
+                fileDropZone.addEventListener('drop', e => { e.preventDefault(); fileDropZone.style.borderColor = 'var(--border-color)'; this.handleDrop(e); });
+
+                document.getElementById('start-camera').addEventListener('click', () => this.startCamera());
+                document.getElementById('stop-camera').addEventListener('click', () => this.stopCamera());
+                document.getElementById('switch-camera')?.addEventListener('click', () => this.switchCamera());
+                document.getElementById('capture-photo')?.addEventListener('click', () => this.capturePhoto());
+                document.getElementById('auto-enhance')?.addEventListener('click', () => this.autoEnhance());
+                document.getElementById('rotate-left')?.addEventListener('click', () => this.rotate(-90));
+                document.getElementById('rotate-right')?.addEventListener('click', () => this.rotate(90));
+                document.getElementById('flip-h')?.addEventListener('click', () => this.flip('horizontal'));
+                document.getElementById('flip-v')?.addEventListener('click', () => this.flip('vertical'));
+                document.getElementById('detect-edges')?.addEventListener('click', () => this.detectAndCorrectPerspective());
+                document.getElementById('filter-none')?.addEventListener('click', () => this.applyFilter('none'));
+                document.getElementById('filter-grayscale')?.addEventListener('click', () => this.applyFilter('grayscale'));
+                document.getElementById('filter-bw')?.addEventListener('click', () => this.applyFilter('bw'));
+                document.getElementById('filter-magic')?.addEventListener('click', () => this.applyFilter('magic'));
+                ['brightness', 'contrast', 'saturation'].forEach(id => {
+                    document.getElementById(id)?.addEventListener('input', e => this.applySettings({ [id]: parseInt(e.target.value) }));
+                });
+                document.getElementById('extract-text')?.addEventListener('click', () => this.extractText());
+                document.getElementById('copy-text')?.addEventListener('click', () => this.copyText());
+                document.getElementById('download-text')?.addEventListener('click', () => this.downloadText());
+                document.getElementById('download-image')?.addEventListener('click', () => this.downloadImage());
+                document.getElementById('clear-history')?.addEventListener('click', () => this.clearHistory());
+            }
+
+            handleFileSelect(e) {
+                const file = e.target.files[0];
+                if (file && file.type.startsWith('image/')) this.loadImage(file);
+                else alert('Please select a valid image file');
+            }
+
+            handleDrop(e) {
+                const file = e.dataTransfer.files[0];
+                if (file && file.type.startsWith('image/')) this.loadImage(file);
+                else alert('Please drop a valid image file');
+            }
+
+            async loadImage(source) {
+                try {
+                    this.currentImageDataURL = null;
+                    await this.imageProcessor.loadImage(source);
+                    const canvas = this.imageProcessor.applySettings({ brightness: 100, contrast: 100, saturation: 100, filter: 'none' });
+                    this.currentImageDataURL = canvas.toDataURL();
+                    this.updatePreview(this.currentImageDataURL);
+                    this.currentImage = { dataURL: this.currentImageDataURL, timestamp: new Date(), text: '', settings: { brightness: 100, contrast: 100, saturation: 100 } };
+                } catch (error) { alert('Error loading image: ' + error.message); }
+            }
+
+            async startCamera() {
+                try {
+                    document.getElementById('start-camera').disabled = true;
+                    await this.cameraManager.init('camera-video');
+                    await this.cameraManager.startCamera();
+                    document.getElementById('camera-section').classList.add('active');
+                    document.getElementById('camera-controls').style.display = 'flex';
+                    document.getElementById('stop-camera').disabled = false;
+                    document.getElementById('file-drop-zone').style.display = 'none';
+                } catch (error) { alert('Camera error: ' + error.message); document.getElementById('start-camera').disabled = false; }
+            }
+
+            stopCamera() {
+                this.cameraManager.stopCamera();
+                document.getElementById('camera-section').classList.remove('active');
+                document.getElementById('camera-controls').style.display = 'none';
+                document.getElementById('start-camera').disabled = false;
+                document.getElementById('stop-camera').disabled = true;
+                document.getElementById('file-drop-zone').style.display = 'block';
+            }
+
+            switchCamera() { this.cameraManager.switchCamera(); }
+
+            async capturePhoto() {
+                try {
+                    const canvas = this.cameraManager.captureFrame();
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    this.loadImage(blob);
+                    this.stopCamera();
+                } catch (error) { alert('Capture error: ' + error.message); }
+            }
+
+            updatePreview(dataURL) {
+                const preview = document.getElementById('editor-image');
+                if (preview) { preview.src = dataURL; preview.style.display = 'block'; }
+                document.getElementById('placeholder').style.display = 'none';
+            }
+
+            applySettings(settings) {
+                if (!this.currentImageDataURL) return;
+                const canvas = this.imageProcessor.applySettings(settings);
+                this.currentImageDataURL = canvas.toDataURL();
+                this.updatePreview(this.currentImageDataURL);
+                if (this.currentImage) this.currentImage.settings = { brightness: settings.brightness, contrast: settings.contrast, saturation: settings.saturation };
+            }
+
+            applyFilter(filter) { this.applySettings({ filter }); }
+
+            autoEnhance() {
+                const canvas = this.imageProcessor.autoEnhance();
+                if (canvas) { this.currentImageDataURL = canvas.toDataURL(); this.updatePreview(this.currentImageDataURL); }
+            }
+
+            rotate(degrees) {
+                const canvas = this.imageProcessor.rotate(degrees);
+                if (canvas) { this.currentImageDataURL = canvas.toDataURL(); this.updatePreview(this.currentImageDataURL); }
+            }
+
+            flip(direction) {
+                const canvas = direction === 'horizontal' ? this.imageProcessor.flipHorizontal() : this.imageProcessor.flipVertical();
+                if (canvas) { this.currentImageDataURL = canvas.toDataURL(); this.updatePreview(this.currentImageDataURL); }
+            }
+
+            async detectAndCorrectPerspective() {
+                if (!this.currentImageDataURL) { alert('Please load an image first'); return; }
+                const modal = document.getElementById('perspective-modal');
+                const canvas = document.getElementById('perspective-canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.src = this.currentImageDataURL;
+                await new Promise(resolve => img.onload = resolve);
+                canvas.width = Math.min(img.width, 800);
+                canvas.height = (img.height / img.width) * canvas.width;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                modal.classList.add('active');
+                this.pendingPerspective = { canvas: canvas, originalImage: img, corners: this.perspectiveCorrector.findDocumentCorners(canvas) };
+                this.drawCorners(canvas, this.pendingPerspective.corners);
+            }
+
+            drawCorners(canvas, corners) {
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                img.src = this.currentImageDataURL;
+                img.onload = () => {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    ctx.fillStyle = '#ef4444';
+                    corners.forEach((corner, index) => {
+                        ctx.beginPath(); ctx.arc(corner.x, corner.y, 8, 0, Math.PI * 2); ctx.fill();
+                        ctx.fillStyle = '#ef4444'; ctx.font = 'bold 12px Arial'; ctx.fillText(index + 1, corner.x + 12, corner.y);
+                    });
+                    ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 2;
+                    ctx.beginPath(); ctx.moveTo(corners[0].x, corners[0].y); ctx.lineTo(corners[1].x, corners[1].y);
+                    ctx.lineTo(corners[2].x, corners[2].y); ctx.lineTo(corners[3].x, corners[3].y); ctx.closePath(); ctx.stroke();
+                };
+            }
+
+            async applyPerspectiveCorrection() {
+                if (!this.pendingPerspective) return;
+                const { canvas, originalImage, corners } = this.pendingPerspective;
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = originalImage.width; tempCanvas.height = originalImage.height;
+                const ctx = tempCanvas.getContext('2d');
+                ctx.drawImage(originalImage, 0, 0);
+                const correctedCanvas = this.perspectiveCorrector.applyPerspectiveCorrection(tempCanvas, corners);
+                this.currentImageDataURL = correctedCanvas.toDataURL();
+                this.updatePreview(this.currentImageDataURL);
+                if (this.currentImage) { this.currentImage.dataURL = this.currentImageDataURL; this.currentImage.settings.perspective = true; }
+                document.getElementById('perspective-modal').classList.remove('active');
+                this.pendingPerspective = null;
+            }
+
+            cancelPerspectiveCorrection() { document.getElementById('perspective-modal').classList.remove('active'); this.pendingPerspective = null; }
+
+            async extractText() {
+                if (!this.currentImageDataURL) { alert('Please load an image first'); return; }
+                document.getElementById('extract-text').disabled = true;
+                document.getElementById('progress-container').style.display = 'block';
+                try {
+                    await this.ocrManager.initialize('ben+eng', progress => {
+                        document.getElementById('progress-bar').style.width = progress.progress + '%';
+                        document.getElementById('progress-text').textContent = 'Progress: ' + progress.progress + '%';
+                    });
+                    const img = new Image();
+                    img.src = this.currentImageDataURL;
+                    await new Promise(resolve => img.onload = resolve);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width; canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    const result = await this.ocrManager.recognize(canvas);
+                    document.getElementById('text-output').textContent = result.text;
+                    document.getElementById('confidence-value').textContent = result.confidence + '%';
+                    document.getElementById('confidence-fill').style.width = result.confidence + '%';
+                    if (this.currentImage) { this.currentImage.text = result.text; this.currentImage.confidence = result.confidence; }
+                    this.addToHistory();
+                } catch (error) { alert('OCR error: ' + error.message); }
+                finally { document.getElementById('extract-text').disabled = false; document.getElementById('progress-container').style.display = 'none'; }
+            }
+
+            copyText() {
+                const text = document.getElementById('text-output').textContent.trim();
+                if (!text) { alert('No text to copy'); return; }
+                navigator.clipboard.writeText(text).then(() => alert('Copied!')).catch(() => alert('Failed'));
+            }
+
+            downloadText() {
+                const text = document.getElementById('text-output').textContent.trim();
+                if (!text) { alert('No text to download'); return; }
+                const blob = new Blob([text], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a'); a.href = url; a.download = 'scan.txt';
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+
+            downloadImage() {
+                if (!this.currentImageDataURL) { alert('No image to download'); return; }
+                const a = document.createElement('a'); a.href = this.currentImageDataURL; a.download = 'scan.png';
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+            }
+
+            addToHistory() {
+                if (!this.currentImage) return;
+                this.scanHistory = this.scanHistory.filter(img => img.dataURL !== this.currentImage.dataURL);
+                this.scanHistory.unshift(this.currentImage);
+                if (this.scanHistory.length > 10) this.scanHistory = this.scanHistory.slice(0, 10);
+                localStorage.setItem('scanHistory', JSON.stringify(this.scanHistory));
+                this.updateHistoryPanel();
+            }
+
+            loadHistory() {
+                const saved = localStorage.getItem('scanHistory');
+                if (saved) { try { this.scanHistory = JSON.parse(saved); } catch (e) { this.scanHistory = []; } }
+                this.updateHistoryPanel();
+            }
+
+            updateHistoryPanel() {
+                const historyList = document.getElementById('history-list');
+                if (!historyList) return;
+                if (this.scanHistory.length === 0) { historyList.innerHTML = '<p style="color:var(--text-color);font-size:14px;">No history yet</p>'; return; }
+                historyList.innerHTML = this.scanHistory.map((scan, index) => `
+                    <div class="history-item" onclick="app.loadFromHistory(${index})">
+                        <div style="display:flex;justify-content:space-between;">
+                            <span>Scan ${index + 1}</span>
+                            <span style="font-size:12px;">${new Date(scan.timestamp).toLocaleDateString()}</span>
+                        </div>
+                        <div style="font-size:12px;">${scan.text ? scan.text.substring(0, 100) + '...' : 'No text'}</div>
+                    </div>
+                `).join('');
+            }
+
+            loadFromHistory(index) {
+                if (!this.scanHistory[index]) return;
+                const scan = this.scanHistory[index];
+                this.currentImageDataURL = scan.dataURL;
+                this.updatePreview(this.currentImageDataURL);
+                this.currentImage = { ...scan, dataURL: scan.dataURL };
+                if (scan.text) {
+                    document.getElementById('text-output').textContent = scan.text;
+                    document.getElementById('confidence-value').textContent = (scan.confidence || 0) + '%';
+                    document.getElementById('confidence-fill').style.width = (scan.confidence || 0) + '%';
+                }
+                const img = new Image(); img.src = scan.dataURL;
+                img.onload = () => { this.imageProcessor.loadImage(img).then(() => this.imageProcessor.applySettings(scan.settings)); };
+            }
+
+            clearHistory() {
+                if (confirm('Clear all history?')) { this.scanHistory = []; localStorage.removeItem('scanHistory'); this.updateHistoryPanel(); }
+            }
+        };
+
+        // ============ Dark Mode Toggle ============
+        function toggleDarkMode() {
+            const root = document.documentElement;
+            if (root.style.backgroundColor === '#0f172a') {
+                root.style.backgroundColor = '';
+            } else {
+                root.style.backgroundColor = '#0f172a';
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('ScanMx initialized');
+        });
+    </script>
+</body>
+</html>
