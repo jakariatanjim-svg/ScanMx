@@ -188,3 +188,56 @@ MIT License - Free for personal and commercial use.
 ---
 
 **Built with ❤️ for personal document scanning needs**
+
+## GitHub Setup Instructions
+
+To set up this repository on your local machine:
+
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/ScanMx.git
+
+# Navigate to the project directory
+cd ScanMx
+
+# Open in browser
+start index.html  # Windows
+# or
+open index.html   # macOS
+# or
+xdg-open index.html  # Linux
+```
+
+For camera functionality, serve the app via local server:
+
+```bash
+# Using Python 3
+python -m http.server 8000
+
+# Using Node.js
+npx http-server -p 8000
+```
+
+Then open: http://localhost:8000
+
+## How to Push Your Changes to GitHub
+
+If you haven't connected to GitHub yet:
+
+1. **Create a new repository on GitHub** (don't initialize with README)
+2. **Add remote and push:**
+
+```bash
+git remote add origin https://github.com/YOUR_USERNAME/ScanMx.git
+git branch -M main
+git push -u origin main
+```
+
+3. **Or if repository already exists:**
+
+```bash
+git remote set-url origin https://github.com/YOUR_USERNAME/ScanMx.git
+git push -u origin --all
+```
+
+Replace `YOUR_USERNAME` with your actual GitHub username.
